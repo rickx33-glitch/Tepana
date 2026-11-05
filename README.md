@@ -17,6 +17,7 @@ El proyecto fue desarrollado utilizando HTML5, CSS3 y JavaScript, aplicando conc
 ## Tecnologías utilizadas
 
 | Tecnología | Aplicación en el proyecto |
+|---|---|
 | HTML5 | Estructura y organización del contenido. |
 | CSS3 | Diseño visual, estilos, efectos y responsividad. |
 | JavaScript ES6+ | Lógica e interactividad de la aplicación. |
@@ -34,12 +35,14 @@ El proyecto utiliza dos clases principales:
 
 ## Estructura del proyecto
 
+```text
 Tepana/
 │
 ├── index.html
 ├── styles.css
 ├── app.js
 └── README.md
+```
 
 ## Instalación y ejecución
 
