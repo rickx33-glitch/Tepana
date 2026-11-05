@@ -1,0 +1,74 @@
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Tepana | Gestor de tareas</title>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- Encabezado -->
+        <header class="encabezado">
+            <h1>Tepana</h1>
+            <p>Organiza tus pendientes laborales</p>
+        </header>
+
+        <!-- Formulario -->
+        <div class="formulario-tarea">
+
+            <input
+                type="text"
+                id="nueva-tarea"
+                placeholder="Escribe un pendiente..."
+                autocomplete="off"
+            >
+
+            <button id="agregar-tarea">
+                Agregar tarea
+            </button>
+
+        </div>
+
+        <!-- Estadísticas -->
+        <section class="estadisticas">
+
+            <div class="estadistica">
+                <span id="total-tareas">0</span>
+                <p>Total</p>
+            </div>
+
+            <div class="estadistica">
+                <span id="pendientes-tareas">0</span>
+                <p>Pendientes</p>
+            </div>
+
+            <div class="estadistica">
+                <span id="completadas-tareas">0</span>
+                <p>Completadas</p>
+            </div>
+
+        </section>
+
+        <!-- Lista de tareas -->
+        <section class="seccion-tareas">
+
+            <h2>Mis pendientes</h2>
+
+            <ul id="lista-tareas"></ul>
+
+        </section>
+
+    </div>
+
+    <script src="app.js"></script>
+
+</body>
+</html>
