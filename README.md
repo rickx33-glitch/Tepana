@@ -63,3 +63,9 @@ Desarrollar una aplicación web funcional que permita aplicar conocimientos fund
 **Proyecto académico | Ingeniería en Desarrollo de Software**
 
 Desarrollado por: Irving Ricardo Martínez Rodríguez.
+
+## 🌐 Aplicación publicada
+
+Puedes utilizar Tepana desde el siguiente enlace:
+
+https://rickx33-glitch.github.io/Tepana/
