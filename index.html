@@ -9,62 +9,205 @@
     <title>Tepana | Gestor de tareas</title>
 
     <link rel="stylesheet" href="styles.css">
+
+    <style>
+        .autenticacion {
+            max-width: 420px;
+            margin: 30px auto;
+        }
+
+        .autenticacion input {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            margin: 12px 0;
+            padding: 12px;
+        }
+
+        .autenticacion button,
+        .sesion button {
+            cursor: pointer;
+        }
+
+        .formulario-auth {
+            margin-top: 20px;
+        }
+
+        .formulario-auth button {
+            width: 100%;
+            padding: 12px;
+        }
+
+        .cambiar-auth {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .cambiar-auth button {
+            background: none;
+            border: none;
+            color: #a78bfa;
+            text-decoration: underline;
+        }
+
+        .sesion {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .sesion button {
+            padding: 8px 14px;
+        }
+
+        .mensaje-auth {
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+    </style>
 </head>
 
 <body>
 
     <div class="container">
 
-        <!-- Encabezado -->
         <header class="encabezado">
             <h1>Tepana</h1>
             <p>Organiza tus pendientes laborales</p>
         </header>
 
-        <!-- Formulario -->
-        <div class="formulario-tarea">
+        <!-- AUTENTICACION -->
+        <section id="seccion-autenticacion" class="autenticacion">
 
-            <input
-                type="text"
-                id="nueva-tarea"
-                placeholder="Escribe un pendiente..."
-                autocomplete="off"
-            >
+            <!-- LOGIN -->
+            <form id="form-login" class="formulario-auth">
 
-            <button id="agregar-tarea">
-                Agregar tarea
-            </button>
+                <h2>Iniciar sesión</h2>
 
-        </div>
+                <input
+                    type="email"
+                    id="login-correo"
+                    placeholder="Correo electrónico"
+                    required
+                >
 
-        <!-- Estadísticas -->
-        <section class="estadisticas">
+                <input
+                    type="password"
+                    id="login-password"
+                    placeholder="Contraseña"
+                    required
+                >
 
-            <div class="estadistica">
-                <span id="total-tareas">0</span>
-                <p>Total</p>
+                <button type="submit">Iniciar sesión</button>
+
+            </form>
+
+            <div class="cambiar-auth" id="opcion-registro">
+                ¿No tienes cuenta?
+                <button type="button" id="mostrar-registro">
+                    Regístrate
+                </button>
             </div>
 
-            <div class="estadistica">
-                <span id="pendientes-tareas">0</span>
-                <p>Pendientes</p>
+            <!-- REGISTRO -->
+            <form id="form-registro" class="formulario-auth" hidden>
+
+                <h2>Crear cuenta</h2>
+
+                <input
+                    type="text"
+                    id="registro-nombre"
+                    placeholder="Nombre completo"
+                    required
+                >
+
+                <input
+                    type="email"
+                    id="registro-correo"
+                    placeholder="Correo electrónico"
+                    required
+                >
+
+                <input
+                    type="password"
+                    id="registro-password"
+                    placeholder="Contraseña (mínimo 8 caracteres)"
+                    minlength="8"
+                    required
+                >
+
+                <button type="submit">Crear cuenta</button>
+
+            </form>
+
+            <div class="cambiar-auth" id="opcion-login" hidden>
+                ¿Ya tienes cuenta?
+                <button type="button" id="mostrar-login">
+                    Inicia sesión
+                </button>
             </div>
 
-            <div class="estadistica">
-                <span id="completadas-tareas">0</span>
-                <p>Completadas</p>
-            </div>
+            <p id="mensaje-auth" class="mensaje-auth"></p>
 
         </section>
 
-        <!-- Lista de tareas -->
-        <section class="seccion-tareas">
+        <!-- APLICACION -->
+        <main id="seccion-aplicacion" hidden>
 
-            <h2>Mis pendientes</h2>
+            <div class="sesion">
+                <span id="nombre-usuario"></span>
+                <button id="cerrar-sesion">Cerrar sesión</button>
+            </div>
 
-            <ul id="lista-tareas"></ul>
+            <div class="formulario-tarea">
 
-        </section>
+                <input
+                    type="text"
+                    id="nueva-tarea"
+                    placeholder="Escribe un pendiente..."
+                    autocomplete="off"
+                >
+
+                <button id="agregar-tarea">
+                    Agregar tarea
+                </button>
+
+            </div>
+
+            <section class="estadisticas">
+
+                <div class="estadistica">
+                    <span id="total-tareas">0</span>
+                    <p>Total</p>
+                </div>
+
+                <div class="estadistica">
+                    <span id="pendientes-tareas">0</span>
+                    <p>Pendientes</p>
+                </div>
+
+                <div class="estadistica">
+                    <span id="completadas-tareas">0</span>
+                    <p>Completadas</p>
+                </div>
+
+            </section>
+
+            <section class="seccion-tareas">
+
+                <h2>Mis pendientes</h2>
+
+                <ul id="lista-tareas"></ul>
+
+            </section>
+
+        </main>
 
     </div>
 

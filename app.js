@@ -1,297 +1,528 @@
 
 /* ========================================
-   TEPANA - GESTOR DE TAREAS
+   TEPANA - GESTOR DE TAREAS FULL STACK
 ======================================== */
 
-// Clase que representa una tarea
-class Tarea {
+// Direccion del backend
+const API_URL = "http://localhost:3000/api";
 
-    constructor(nombre, completada = false) {
+// Elementos de autenticacion
+const seccionAutenticacion = document.getElementById("seccion-autenticacion");
+const seccionAplicacion = document.getElementById("seccion-aplicacion");
 
-        this.id = Date.now().toString() +
-            Math.random().toString(16).slice(2);
+const formularioLogin = document.getElementById("form-login");
+const formularioRegistro = document.getElementById("form-registro");
 
-        this.nombre = nombre;
-        this.completada = completada;
+const mensajeAuth = document.getElementById("mensaje-auth");
+
+// Elementos de tareas
+const entradaTarea = document.getElementById("nueva-tarea");
+const listaTareas = document.getElementById("lista-tareas");
+const botonAgregar = document.getElementById("agregar-tarea");
+
+// Estado de la aplicacion
+let tareas = [];
+let usuarioActual = null;
+
+let token = localStorage.getItem("tepanaToken");
+
+
+// ========================================
+// COMUNICACION CON EL BACKEND
+// ========================================
+
+async function solicitarAPI(ruta, opciones = {}) {
+
+    const respuesta = await fetch(`${API_URL}${ruta}`, {
+        ...opciones,
+
+        headers: {
+            "Content-Type": "application/json",
+
+            ...(token
+                ? { Authorization: `Bearer ${token}` }
+                : {}),
+
+            ...opciones.headers
+        }
+    });
+
+    const datos = await respuesta.json().catch(() => ({}));
+
+    if (!respuesta.ok) {
+
+        if (respuesta.status === 401 && token) {
+            cerrarSesion();
+        }
+
+        throw new Error(
+            datos.mensaje || "Error al comunicarse con el servidor"
+        );
+    }
+
+    return datos;
+}
+
+
+// ========================================
+// REGISTRO
+// ========================================
+
+document.getElementById("mostrar-registro").addEventListener("click", () => {
+
+    formularioLogin.hidden = true;
+    formularioRegistro.hidden = false;
+
+    document.getElementById("opcion-registro").hidden = true;
+    document.getElementById("opcion-login").hidden = false;
+
+    mensajeAuth.textContent = "";
+
+});
+
+
+formularioRegistro.addEventListener("submit", async (evento) => {
+
+    evento.preventDefault();
+
+    const nombre = document.getElementById("registro-nombre").value.trim();
+    const correo = document.getElementById("registro-correo").value.trim();
+    const password = document.getElementById("registro-password").value;
+
+    try {
+
+        const datos = await solicitarAPI("/auth/registro", {
+            method: "POST",
+
+            body: JSON.stringify({
+                nombre,
+                correo,
+                password
+            })
+        });
+
+        mensajeAuth.textContent = datos.mensaje;
+        mensajeAuth.style.color = "#22c55e";
+
+        formularioRegistro.reset();
+
+        formularioRegistro.hidden = true;
+        formularioLogin.hidden = false;
+
+        document.getElementById("opcion-registro").hidden = false;
+        document.getElementById("opcion-login").hidden = true;
+
+        document.getElementById("login-correo").value = correo;
+
+    } catch (error) {
+
+        mensajeAuth.textContent = error.message;
+        mensajeAuth.style.color = "#ef4444";
+
+    }
+
+});
+
+
+// ========================================
+// CAMBIAR A INICIO DE SESION
+// ========================================
+
+document.getElementById("mostrar-login").addEventListener("click", () => {
+
+    formularioRegistro.hidden = true;
+    formularioLogin.hidden = false;
+
+    document.getElementById("opcion-registro").hidden = false;
+    document.getElementById("opcion-login").hidden = true;
+
+    mensajeAuth.textContent = "";
+
+});
+
+
+// ========================================
+// INICIO DE SESION
+// ========================================
+
+formularioLogin.addEventListener("submit", async (evento) => {
+
+    evento.preventDefault();
+
+    const correo = document.getElementById("login-correo").value.trim();
+    const password = document.getElementById("login-password").value;
+
+    try {
+
+        const datos = await solicitarAPI("/auth/login", {
+            method: "POST",
+
+            body: JSON.stringify({
+                correo,
+                password
+            })
+        });
+
+        token = datos.token;
+
+        usuarioActual = datos.usuario;
+
+        localStorage.setItem("tepanaToken", token);
+
+        formularioLogin.reset();
+
+        mensajeAuth.textContent = "";
+
+        await cargarAplicacion();
+
+    } catch (error) {
+
+        mensajeAuth.textContent = error.message;
+        mensajeAuth.style.color = "#ef4444";
+
+    }
+
+});
+
+
+// ========================================
+// CARGAR APLICACION
+// ========================================
+
+async function cargarAplicacion() {
+
+    try {
+
+        tareas = await solicitarAPI("/tareas");
+
+        seccionAutenticacion.hidden = true;
+        seccionAplicacion.hidden = false;
+
+        document.getElementById("nombre-usuario").textContent =
+            `Bienvenido, ${usuarioActual.nombre}`;
+
+        mostrarTareas();
+
+    } catch (error) {
+
+        alert(error.message);
 
     }
 
 }
 
 
-// Clase que administra las tareas
-class GestorDeTareas {
+// ========================================
+// CERRAR SESION
+// ========================================
 
-    constructor() {
+function cerrarSesion() {
 
-        this.tareas = this.cargarTareas();
+    token = null;
+    usuarioActual = null;
+    tareas = [];
+
+    localStorage.removeItem("tepanaToken");
+
+    seccionAplicacion.hidden = true;
+    seccionAutenticacion.hidden = false;
+
+    formularioLogin.hidden = false;
+    formularioRegistro.hidden = true;
+
+    document.getElementById("opcion-registro").hidden = false;
+    document.getElementById("opcion-login").hidden = true;
+
+    mensajeAuth.textContent = "";
+
+    mostrarTareas();
+
+}
+
+
+document.getElementById("cerrar-sesion").addEventListener(
+    "click",
+    cerrarSesion
+);
+
+
+// ========================================
+// CREATE: AGREGAR TAREA
+// ========================================
+
+async function agregarTarea(nombre) {
+
+    try {
+
+        const nuevaTarea = await solicitarAPI("/tareas", {
+            method: "POST",
+
+            body: JSON.stringify({
+                nombre
+            })
+        });
+
+        tareas.unshift(nuevaTarea);
+
+        mostrarTareas();
+
+    } catch (error) {
+
+        alert(error.message);
 
     }
 
+}
 
-    // CREATE: Agregar una tarea
-    agregarTarea(nombre) {
 
-        const tarea = new Tarea(nombre);
+// ========================================
+// READ: CONSULTAR TAREAS
+// ========================================
 
-        this.tareas.push(tarea);
+async function consultarTareas() {
 
-        this.guardarTareas();
-        this.mostrarTareas();
+    try {
+
+        tareas = await solicitarAPI("/tareas");
+
+        mostrarTareas();
+
+    } catch (error) {
+
+        alert(error.message);
 
     }
 
+}
 
-    // DELETE: Eliminar una tarea
-    eliminarTarea(id) {
 
-        this.tareas = this.tareas.filter(
-            tarea => tarea.id !== id
+// ========================================
+// UPDATE: EDITAR TAREA
+// ========================================
+
+async function editarTarea(id, nuevoNombre) {
+
+    try {
+
+        const tareaActualizada = await solicitarAPI(`/tareas/${id}`, {
+            method: "PUT",
+
+            body: JSON.stringify({
+                nombre: nuevoNombre
+            })
+        });
+
+        tareas = tareas.map(tarea =>
+            tarea._id === id ? tareaActualizada : tarea
         );
 
-        this.guardarTareas();
-        this.mostrarTareas();
+        mostrarTareas();
+
+    } catch (error) {
+
+        alert(error.message);
 
     }
 
+}
 
-    // UPDATE: Editar una tarea
-    editarTarea(id, nuevoNombre) {
 
-        const tarea = this.tareas.find(
-            tarea => tarea.id === id
+// ========================================
+// UPDATE: CAMBIAR ESTADO
+// ========================================
+
+async function cambiarEstado(id) {
+
+    const tarea = tareas.find(tarea => tarea._id === id);
+
+    if (!tarea) return;
+
+    try {
+
+        const tareaActualizada = await solicitarAPI(`/tareas/${id}`, {
+            method: "PUT",
+
+            body: JSON.stringify({
+                completada: !tarea.completada
+            })
+        });
+
+        tareas = tareas.map(tarea =>
+            tarea._id === id ? tareaActualizada : tarea
         );
 
-        if (tarea) {
+        mostrarTareas();
 
-            tarea.nombre = nuevoNombre;
+    } catch (error) {
 
-            this.guardarTareas();
-            this.mostrarTareas();
+        alert(error.message);
 
+    }
+
+}
+
+
+// ========================================
+// DELETE: ELIMINAR TAREA
+// ========================================
+
+async function eliminarTarea(id) {
+
+    try {
+
+        await solicitarAPI(`/tareas/${id}`, {
+            method: "DELETE"
+        });
+
+        tareas = tareas.filter(tarea => tarea._id !== id);
+
+        mostrarTareas();
+
+    } catch (error) {
+
+        alert(error.message);
+
+    }
+
+}
+
+
+// ========================================
+// MOSTRAR TAREAS Y ESTADISTICAS
+// ========================================
+
+function mostrarTareas() {
+
+    listaTareas.innerHTML = "";
+
+    const total = tareas.length;
+
+    const completadas = tareas.filter(
+        tarea => tarea.completada
+    ).length;
+
+    const pendientes = total - completadas;
+
+    document.getElementById("total-tareas").textContent = total;
+
+    document.getElementById("pendientes-tareas").textContent = pendientes;
+
+    document.getElementById("completadas-tareas").textContent = completadas;
+
+    if (total === 0) {
+
+        listaTareas.innerHTML = `
+            <li class="mensaje-vacio">
+                No tienes pendientes por ahora
+            </li>
+        `;
+
+        return;
+
+    }
+
+    tareas.forEach(tarea => {
+
+        const elemento = document.createElement("li");
+
+        elemento.classList.add("tarjeta-tarea");
+
+        const nombre = document.createElement("span");
+
+        nombre.textContent = tarea.nombre;
+
+        nombre.classList.add("nombre-tarea");
+
+        if (tarea.completada) {
+            nombre.classList.add("tarea-completada");
         }
 
-    }
+        const acciones = document.createElement("div");
 
+        acciones.classList.add("acciones-tarea");
 
-    // UPDATE: Cambiar estado de una tarea
-    cambiarEstado(id) {
+        // Boton completar
+        const botonEstado = document.createElement("button");
 
-        const tarea = this.tareas.find(
-            tarea => tarea.id === id
-        );
+        botonEstado.textContent = tarea.completada ? "↩" : "✓";
 
-        if (tarea) {
+        botonEstado.classList.add("boton-estado");
 
-            tarea.completada = !tarea.completada;
+        botonEstado.title = tarea.completada
+            ? "Marcar como pendiente"
+            : "Completar tarea";
 
-            this.guardarTareas();
-            this.mostrarTareas();
+        botonEstado.addEventListener("click", () => {
+            cambiarEstado(tarea._id);
+        });
 
-        }
+        // Boton editar
+        const botonEditar = document.createElement("button");
 
-    }
+        botonEditar.textContent = "Editar";
 
+        botonEditar.classList.add("boton-editar");
 
-    // Guardar tareas en LocalStorage
-    guardarTareas() {
+        botonEditar.addEventListener("click", () => {
 
-        localStorage.setItem(
-            "tepanaTareas",
-            JSON.stringify(this.tareas)
-        );
-
-    }
-
-
-    // Recuperar tareas guardadas
-    cargarTareas() {
-
-        const datos = localStorage.getItem("tepanaTareas");
-
-        return datos ? JSON.parse(datos) : [];
-
-    }
-
-
-    // READ: Mostrar tareas en pantalla
-    mostrarTareas() {
-
-        listaTareas.innerHTML = "";
-
-
-        // Calcular estadísticas
-        const total = this.tareas.length;
-
-        const completadas = this.tareas.filter(
-            tarea => tarea.completada
-        ).length;
-
-        const pendientes = total - completadas;
-
-
-        // Actualizar contadores
-        document.getElementById("total-tareas").textContent = total;
-
-        document.getElementById("pendientes-tareas").textContent = pendientes;
-
-        document.getElementById("completadas-tareas").textContent = completadas;
-
-
-        // Mostrar mensaje si no existen tareas
-        if (total === 0) {
-
-            listaTareas.innerHTML = `
-                <li class="mensaje-vacio">
-                     No tienes pendientes por ahora
-                </li>
-            `;
-
-            return;
-
-        }
-
-
-        // Recorrer todas las tareas
-        this.tareas.forEach(tarea => {
-
-            const elemento = document.createElement("li");
-
-            elemento.classList.add("tarjeta-tarea");
-
-
-            // Nombre de la tarea
-            const nombre = document.createElement("span");
-
-            nombre.textContent = tarea.nombre;
-
-            nombre.classList.add("nombre-tarea");
-
-
-            if (tarea.completada) {
-
-                nombre.classList.add("tarea-completada");
-
-            }
-
-
-            // Contenedor de botones
-            const acciones = document.createElement("div");
-
-            acciones.classList.add("acciones-tarea");
-
-
-            // Botón para completar
-            const botonEstado = document.createElement("button");
-
-            botonEstado.textContent = tarea.completada ? "↩" : "✓";
-
-            botonEstado.classList.add("boton-estado");
-
-            botonEstado.title = tarea.completada
-                ? "Marcar como pendiente"
-                : "Completar tarea";
-
-
-            botonEstado.addEventListener("click", () => {
-
-                this.cambiarEstado(tarea.id);
-
-            });
-
-
-            // Botón para editar
-            const botonEditar = document.createElement("button");
-
-            botonEditar.textContent = "Editar";
-
-            botonEditar.classList.add("boton-editar");
-
-
-            botonEditar.addEventListener("click", () => {
-
-                const nuevoNombre = prompt(
-                    "Editar tarea:",
-                    tarea.nombre
-                );
-
-
-                if (nuevoNombre !== null && nuevoNombre.trim() !== "") {
-
-                    this.editarTarea(
-                        tarea.id,
-                        nuevoNombre.trim()
-                    );
-
-                } else if (nuevoNombre !== null) {
-
-                    alert("El nombre no puede estar vacío.");
-
-                }
-
-            });
-
-
-            // Botón para eliminar
-            const botonEliminar = document.createElement("button");
-
-            botonEliminar.textContent = "Eliminar";
-
-            botonEliminar.classList.add("boton-eliminar");
-
-
-            botonEliminar.addEventListener("click", () => {
-
-                if (confirm("¿Deseas eliminar esta tarea?")) {
-
-                    this.eliminarTarea(tarea.id);
-
-                }
-
-            });
-
-
-            // Agregar botones y elementos
-            acciones.append(
-                botonEstado,
-                botonEditar,
-                botonEliminar
+            const nuevoNombre = prompt(
+                "Editar tarea:",
+                tarea.nombre
             );
 
-            elemento.append(nombre, acciones);
+            if (nuevoNombre === null) return;
 
-            listaTareas.appendChild(elemento);
+            if (!nuevoNombre.trim()) {
+                alert("El nombre no puede estar vacio.");
+                return;
+            }
+
+            editarTarea(tarea._id, nuevoNombre.trim());
 
         });
 
-    }
+        // Boton eliminar
+        const botonEliminar = document.createElement("button");
+
+        botonEliminar.textContent = "Eliminar";
+
+        botonEliminar.classList.add("boton-eliminar");
+
+        botonEliminar.addEventListener("click", () => {
+
+            if (confirm("¿Deseas eliminar esta tarea?")) {
+                eliminarTarea(tarea._id);
+            }
+
+        });
+
+        acciones.append(
+            botonEstado,
+            botonEditar,
+            botonEliminar
+        );
+
+        elemento.append(
+            nombre,
+            acciones
+        );
+
+        listaTareas.appendChild(elemento);
+
+    });
 
 }
 
 
 // ========================================
-// INTERACCION CON EL HTML
+// EVENTOS DEL FORMULARIO DE TAREAS
 // ========================================
 
-const entradaTarea = document.getElementById("nueva-tarea");
-
-const listaTareas = document.getElementById("lista-tareas");
-
-const botonAgregar = document.getElementById("agregar-tarea");
-
-
-// Crear instancia del gestor
-const gestor = new GestorDeTareas();
-
-
-// Evento para agregar tareas
-botonAgregar.addEventListener("click", () => {
+botonAgregar.addEventListener("click", async () => {
 
     const nombre = entradaTarea.value.trim();
 
-
-    // Validar campo vacío
-    if (nombre === "") {
+    if (!nombre) {
 
         alert("Escribe una tarea antes de agregarla.");
 
@@ -299,8 +530,7 @@ botonAgregar.addEventListener("click", () => {
 
     }
 
-
-    gestor.agregarTarea(nombre);
+    await agregarTarea(nombre);
 
     entradaTarea.value = "";
 
@@ -309,17 +539,43 @@ botonAgregar.addEventListener("click", () => {
 });
 
 
-// Permitir agregar tareas con Enter
-entradaTarea.addEventListener("keydown", (evento) => {
+entradaTarea.addEventListener("keydown", evento => {
 
     if (evento.key === "Enter") {
-
         botonAgregar.click();
-
     }
 
 });
 
 
-// Mostrar tareas al iniciar la aplicación
-gestor.mostrarTareas();
+// ========================================
+// INICIAR APLICACION
+// ========================================
+
+async function iniciarAplicacion() {
+
+    if (!token) return;
+
+    try {
+
+        const respuesta = await solicitarAPI("/auth/perfil");
+
+        usuarioActual = respuesta.usuario || respuesta;
+
+        await cargarAplicacion();
+
+    } catch (error) {
+
+        token = null;
+
+        localStorage.removeItem("tepanaToken");
+
+        seccionAutenticacion.hidden = false;
+        seccionAplicacion.hidden = true;
+
+    }
+
+}
+
+iniciarAplicacion();
+    
