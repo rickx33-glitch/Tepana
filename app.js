@@ -4,7 +4,7 @@
 ======================================== */
 
 // Direccion del backend
-const API_URL = "http://localhost:3000/api";
+const API_URL = "https://tepana-backend.onrender.com/api";
 
 // Elementos de autenticacion
 const seccionAutenticacion = document.getElementById("seccion-autenticacion");
@@ -578,4 +578,3 @@ async function iniciarAplicacion() {
 }
 
 iniciarAplicacion();
-    
